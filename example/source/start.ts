@@ -1,11 +1,11 @@
 import {BrowserWebSocketClientAdapter} from "@automerge/automerge-repo-network-websocket"
-import OriginPrivateFileSystemAdapter from "../.."
+import BrowserFileSystemAdapter from "../.."
 import {Repo} from "@automerge/automerge-repo"
 
-export default async function startAutomerge() {
+export default function startAutomerge(directory: FileSystemDirectoryHandle) {
 	const repo = new Repo({
 		network: [new BrowserWebSocketClientAdapter(`wss://galaxy.observer`)],
-		storage: new OriginPrivateFileSystemAdapter("root"),
+		storage: new BrowserFileSystemAdapter(directory),
 	})
 	return repo
 }

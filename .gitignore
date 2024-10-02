@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+/browserfs-storage-adapter.*
+tests/navigator.storage/automerge

@@ -4,24 +4,36 @@ import type {
 	StorageKey,
 } from "@automerge/automerge-repo/slim"
 
-export default class OPFSStorageAdapter implements StorageAdapterInterface {
-	private directory: Promise<FileSystemDirectoryHandle>
-	private cache: Map<string, Uint8Array> = new Map()
-
-	constructor(name = "automerge") {
-		const directory = navigator.storage.getDirectory().then(async root => {
-			return root.getDirectoryHandle(name, {
-				create: true,
-			})
-		})
-		this.directory = directory
+export default class BrowserFileSystemStorageAdapter
+	implements StorageAdapterInterface
+{
+	constructor(
+		directory:
+			| string
+			| FileSystemDirectoryHandle
+			| Promise<FileSystemDirectoryHandle>
+	) {
+		if (typeof directory == "string") {
+			this.directory = navigator.storage
+				.getDirectory()
+				.then(dir => dir.getDirectoryHandle(directory, {create: true}))
+		} else {
+			this.directory = directory
+		}
 	}
+	private directory:
+		| Promise<FileSystemDirectoryHandle>
+		| FileSystemDirectoryHandle
+	private cache: Map<string, Uint8Array> = new Map()
+	// todo caching these may or may not be sensible
+	// private fileHandleCache: Map<string, FileSystemFileHandle>
+	// private directoryHandleCache: Map<string, FileSystemDirectoryHandle>
 
 	async load(storageKey: StorageKey): Promise<Uint8Array | undefined> {
 		const path = getFilePath(storageKey)
 		const key = getCacheKeyFromFilePath(path)
 		if (this.cache.has(key)) return this.cache.get(key)
-		const handle = await this.directory.then(dir => getFileHandle(dir, path))
+		const handle = await getFileHandle(await this.directory, path)
 		const file = await handle!.getFile()
 		if (file.size) {
 			return new Uint8Array(await file.arrayBuffer())
@@ -29,11 +41,12 @@ export default class OPFSStorageAdapter implements StorageAdapterInterface {
 			return undefined
 		}
 	}
+
 	async save(storageKey: StorageKey, data: Uint8Array): Promise<void> {
 		const path = getFilePath(storageKey)
 		const key = getCacheKeyFromFilePath(path)
 		this.cache.set(key, data)
-		const handle = await this.directory.then(dir => getFileHandle(dir, path))
+		const handle = await getFileHandle(await this.directory, path)
 		// todo this part needs to happen in a worker in Safari
 		const writable = await handle!.createWritable({keepExistingData: false})
 		await writable.write(data)
@@ -45,9 +58,7 @@ export default class OPFSStorageAdapter implements StorageAdapterInterface {
 		this.cache.delete(key)
 		const dirpath = path.slice(0, -1)
 		const filename = path[path.length - 1]
-		const handle = await this.directory.then(dir =>
-			getDirectoryHandle(dir, dirpath)
-		)
+		const handle = await getDirectoryHandle(await this.directory, dirpath)
 		await handle.removeEntry(filename, {recursive: true})
 	}
 	async loadRange(storageKeyPrefix: StorageKey): Promise<Chunk[]> {
@@ -82,8 +93,9 @@ export default class OPFSStorageAdapter implements StorageAdapterInterface {
 				this.cache.delete(key)
 			}
 		}
-		const parent = await this.directory.then(dir =>
-			getDirectoryHandle(dir, path.slice(0, -1))
+		const parent = await getDirectoryHandle(
+			await this.directory,
+			path.slice(0, -1)
 		)
 		await parent.removeEntry(path[path.length - 1], {recursive: true})
 	}

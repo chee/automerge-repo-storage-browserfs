@@ -1,9 +1,9 @@
-## automerge-repo-storage-origin-private-file-system
+## automerge-repo-storage-browserfs
 
 An [Automerge](https://automerge.org/)
 [Repo](https://automerge.org/docs/repositories)
 [Storage adapter](https://automerge.org/docs/repositories/storage/) for using
-the browser's [Origin private file system](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system) as storage.
+a [Directory](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle) of the browser's [File System API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API) as storage.
 
 it uses the same speedy optimized filesystem layout as Automerge's own [nodefs
 adapter](https://automerge.org/docs/repositories/storage/#file-system), and is
@@ -13,24 +13,34 @@ automerge-repo in Chromium and Firefox.
 ## usage
 
 ```bash
-pnpm add automerge-repo-storage-origin-private-file-system
+pnpm add automerge-repo-storage-browser-file-system
 ```
 
 ```ts
 import {BrowserWebSocketClientAdapter} from "@automerge/automerge-repo-network-websocket"
-import OriginPrivateFileSystemAdapter from "automerge-repo-storage-origin-private-file-system"
+import BrowserFileSystemAdapter from "automerge-repo-storage-browser-file-system"
 import {Repo} from "@automerge/automerge-repo"
 
 export default async function startAutomerge() {
 	const repo = new Repo({
-		storage: new OriginPrivateFileSystemAdapter("automerge"),
+		storage: new BrowserFileSystemAdapter("automerge"), // or pass a FileSystemDirectoryHandle
 		network: [new BrowserWebSocketClientAdapter("wss://sync.automerge.org")],
 	})
 	return repo
 }
 ```
 
-for more info see the fabulous [automerge website](https://automerge.org/)
+for general info on automerge repo, see the fabulous [automerge website](https://automerge.org/)
+
+## browser differences
+
+- In Chromium the directory can provided by the
+  [`showDirectoryPicker`](https://developer.mozilla.org/en-US/docs/Web/API/Window/showDirectoryPicker)
+  or the [Origin private file
+  system](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system)'s
+  `navigator.storage.getDirectory()`.
+- In Firefox only the origin private file system is available.
+- In Safari, the main thread cannot write to even the OPFS. If you'd like to submit a Pull Request that uses a Web Worker to perform the rights in safari, i would like to read it.
 
 ## weaknesses and drawbacks
 

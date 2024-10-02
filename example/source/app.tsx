@@ -1,9 +1,28 @@
-import {For, Suspense} from "solid-js"
+import {createResource, For, Switch, Match, Suspense} from "solid-js"
 import start from "./start.ts"
 import {createDocumentStore, useHandle} from "automerge-repo-solid-primitives"
-import {isValidAutomergeUrl} from "@automerge/automerge-repo"
+import {isValidAutomergeUrl, type Repo} from "@automerge/automerge-repo"
 
-const repo = await start()
+export default function App() {
+	let {promise, resolve} = Promise.withResolvers()
+	const [directory] = createResource(async function () {
+		await promise
+		return "showDirectoryPicker" in window
+			? window.showDirectoryPicker()
+			: "automerge"
+	})
+
+	return (
+		<Switch>
+			<Match when={directory()}>
+				<Project repo={start(directory()!)} />
+			</Match>
+			<Match when={!directory()}>
+				<button onclick={resolve}>open directory</button>
+			</Match>
+		</Switch>
+	)
+}
 
 type Project = {
 	title: string
@@ -20,14 +39,14 @@ const title = (index: number, text: string) => (doc: Project) => {
 
 const add = () => (doc: Project) => doc.items.unshift({title: "new item"})
 
-function App() {
+function Project(props: {repo: Repo}) {
 	const handle = useHandle<Project>(
 		() => {
 			const hash = location.hash.slice(1)
 			if (hash && isValidAutomergeUrl(hash)) {
 				return hash
 			}
-			const {url} = repo.create({
+			const {url} = props.repo.create({
 				title: "hello",
 				items: [
 					{title: "i am item"},
@@ -36,7 +55,7 @@ function App() {
 			})
 			return (location.hash = url)
 		},
-		{repo}
+		{repo: props.repo}
 	)
 	const project = createDocumentStore(handle)
 
@@ -55,18 +74,14 @@ function App() {
 									type="checkbox"
 									checked={!!item.complete}
 									oninput={event =>
-										handle()!.change(
-											check(index(), event.target.checked)
-										)
+										handle()!.change(check(index(), event.target.checked))
 									}
 								/>
 								<input
 									type="text"
 									value={item.title}
 									oninput={event =>
-										handle()!.change(
-											title(index(), event.target.value)
-										)
+										handle()!.change(title(index(), event.target.value))
 									}
 								/>
 							</li>
@@ -77,5 +92,3 @@ function App() {
 		</Suspense>
 	)
 }
-
-export default App

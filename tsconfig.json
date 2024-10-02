@@ -17,5 +17,5 @@
 		"noFallthroughCasesInSwitch": true,
 		"outDir": "."
 	},
-	"files": ["source/origin-private-file-system-storage-adapter.ts"]
+	"files": ["source/browserfs-storage-adapter.ts"]
 }

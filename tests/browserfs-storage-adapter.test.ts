@@ -1,9 +1,9 @@
 import {describe} from "vitest"
 import {runStorageAdapterTests} from "./storage-adapter-tests.ts"
-import OriginPrivateFileSystemAdapter from "../source/origin-private-file-system-storage-adapter.ts"
+import BrowserFileSystemAdapter from "../source/browserfs-storage-adapter.ts"
 
-describe("OriginPrivateFileSystemAdapter", () => {
-	const setup = async () => {
+describe("BrowserFileSystemAdapter", function () {
+	runStorageAdapterTests(async function () {
 		if (!globalThis.navigator.storage) {
 			const fileSystemAccess = await import("file-system-access")
 			const nodeAdapter = await import(
@@ -19,20 +19,19 @@ describe("OriginPrivateFileSystemAdapter", () => {
 				)
 		}
 
-		const adapter = new OriginPrivateFileSystemAdapter("automerge")
 		const opfs = await globalThis.navigator.storage.getDirectory()
+		const rootDirectoryName = "automerge"
+		const root = await opfs.getDirectoryHandle(rootDirectoryName, {
+			create: true,
+		})
+
+		const adapter = new BrowserFileSystemAdapter(root)
+
 		return {
 			adapter,
 			async teardown() {
-				await opfs
-					.getDirectoryHandle("automerge")
-					.then(() => {
-						return opfs.removeEntry("automerge", {recursive: true})
-					})
-					.catch(() => {})
+				await opfs.removeEntry(rootDirectoryName, {recursive: true})
 			},
 		}
-	}
-
-	runStorageAdapterTests(setup)
+	})
 })
