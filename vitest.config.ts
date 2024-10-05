@@ -4,7 +4,4 @@ import wasm from "vite-plugin-wasm"
 export default defineConfig({
 	mode: "web",
 	plugins: [wasm()],
-	test: {
-		environment: "jsdom",
-	},
 })

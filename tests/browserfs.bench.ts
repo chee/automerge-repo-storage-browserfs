@@ -33,10 +33,11 @@ const repos = {
 	}),
 }
 
-const array = Array.from(Array(1000), () => Math.random())
+const array = Array.from(Array(10000), () => Math.random())
+const array2 = structuredClone(array)
 const created = {
-	browserfs: repos.browserfs.create({array}),
-	idb: repos.idb.create({array}),
+	browserfs: repos.browserfs.create({array, array2}),
+	idb: repos.idb.create({array, array2}),
 }
 
 describe("create", () => {
@@ -54,6 +55,17 @@ describe("find", () => {
 	})
 	bench("idb", () => {
 		repos.idb.find(created.idb.url)
+	})
+})
+
+describe("load", () => {
+	bench("browserfs", async () => {
+		const handle = repos.browserfs.find(created.browserfs.url)
+		await handle.doc()
+	})
+	bench("idb", async () => {
+		const handle = repos.idb.find(created.idb.url)
+		await handle.doc()
 	})
 })
 
