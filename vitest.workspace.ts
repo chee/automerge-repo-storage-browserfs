@@ -1,11 +1,13 @@
-import {defineWorkspace} from "vitest/config"
+import {
+	defineWorkspace,
+	type WorkspaceProjectConfiguration,
+} from "vitest/config"
 
-export default defineWorkspace([
-	// disable this line before running benchmarks
-	"vitest.config.ts",
+const benchmark: WorkspaceProjectConfiguration[] = [
 	{
 		extends: "vitest.config.ts",
 		test: {
+			name: "chromium",
 			includeTaskLocation: true,
 			browser: {
 				enabled: true,
@@ -15,9 +17,14 @@ export default defineWorkspace([
 			},
 		},
 	},
+]
+
+const test = benchmark.concat([
+	"vitest.config.ts",
 	{
 		extends: "vitest.config.ts",
 		test: {
+			name: "firefox",
 			includeTaskLocation: true,
 			browser: {
 				enabled: true,
@@ -29,8 +36,9 @@ export default defineWorkspace([
 	},
 	// safari is not supported yet
 	// {
-	// 	extends: "vite.config.ts",
+	// 	extends: "vitest.config.ts",
 	// 	test: {
+	// 		name: "safari",
 	// 		includeTaskLocation: true,
 	// 		browser: {
 	// 			enabled: true,
@@ -41,3 +49,7 @@ export default defineWorkspace([
 	// 	},
 	// },
 ])
+
+export default defineWorkspace(
+	import.meta.env.MODE == "benchmark" ? benchmark : test
+)

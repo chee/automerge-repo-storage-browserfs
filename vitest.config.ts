@@ -5,6 +5,7 @@ export default defineConfig({
 	mode: "web",
 	plugins: [wasm()],
 	test: {
+		name: "jsdom",
 		environment: "jsdom",
 	},
 })

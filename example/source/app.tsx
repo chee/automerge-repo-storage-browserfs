@@ -1,28 +1,32 @@
 import {createResource, For, Switch, Match, Suspense} from "solid-js"
-import start from "./start.ts"
+import start from "./start-worker.ts"
 import {createDocumentStore, useHandle} from "automerge-repo-solid-primitives"
 import {isValidAutomergeUrl, type Repo} from "@automerge/automerge-repo"
 
-export default function App() {
-	let {promise, resolve} = Promise.withResolvers()
-	const [directory] = createResource(async function () {
-		await promise
-		return "showDirectoryPicker" in window
-			? window.showDirectoryPicker()
-			: "automerge"
-	})
-
-	return (
-		<Switch>
-			<Match when={directory()}>
-				<Project repo={start(directory()!)} />
-			</Match>
-			<Match when={!directory()}>
-				<button onclick={resolve}>open directory</button>
-			</Match>
-		</Switch>
-	)
+export default function Worker() {
+	return <Project repo={start("automerge")} />
 }
+
+// export default function App() {
+// 	let {promise, resolve} = Promise.withResolvers()
+// 	const [directory] = createResource(async function () {
+// 		await promise
+// 		return "showDirectoryPicker" in window
+// 			? window.showDirectoryPicker()
+// 			: "automerge"
+// 	})
+
+// 	return (
+// 		<Switch>
+// 			<Match when={directory()}>
+// 				<Project repo={start(directory()!)} />
+// 			</Match>
+// 			<Match when={!directory()}>
+// 				<button onclick={resolve}>open directory</button>
+// 			</Match>
+// 		</Switch>
+// 	)
+// }
 
 type Project = {
 	title: string

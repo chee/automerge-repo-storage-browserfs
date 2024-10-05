@@ -26,15 +26,13 @@ export function runStorageAdapterTests(setup: SetupFn, title?: string): void {
 		title ? `(${title})` : ""
 	}`, () => {
 		describe("load", () => {
-			it("should return undefined if there is no data", async ({
-				adapter,
-			}) => {
+			it("should return undefined if there is no data", async ({adapter}) => {
 				const actual = await adapter.load(["AAAAA", "sync-state", "xxxxx"])
 				expect(actual).toBeUndefined()
 			})
 		})
 
-		describe("save and load", () => {
+		describe.only("save and load", () => {
 			it("should return data that was saved", async ({adapter}) => {
 				await adapter.save(["storage-adapter-id"], PAYLOAD_A())
 				const actual = await adapter.load(["storage-adapter-id"])
@@ -48,7 +46,10 @@ export function runStorageAdapterTests(setup: SetupFn, title?: string): void {
 			})
 
 			it("should work with a large payload", async ({adapter}) => {
-				await adapter.save(["AAAAA", "sync-state", "xxxxx"], LARGE_PAYLOAD)
+				await adapter.save(
+					["AAAAA", "sync-state", "xxxxx"],
+					structuredClone(LARGE_PAYLOAD)
+				)
 				const actual = await adapter.load(["AAAAA", "sync-state", "xxxxx"])
 				expect(actual).toStrictEqual(LARGE_PAYLOAD)
 			})
@@ -78,9 +79,7 @@ export function runStorageAdapterTests(setup: SetupFn, title?: string): void {
 					])
 				)
 
-				expect(
-					await adapter.loadRange(["AAAAA", "sync-state"])
-				).toStrictEqual(
+				expect(await adapter.loadRange(["AAAAA", "sync-state"])).toStrictEqual(
 					expect.arrayContaining([
 						{key: ["AAAAA", "sync-state", "xxxxx"], data: PAYLOAD_A()},
 						{key: ["AAAAA", "sync-state", "zzzzz"], data: PAYLOAD_C()},
@@ -88,9 +87,7 @@ export function runStorageAdapterTests(setup: SetupFn, title?: string): void {
 				)
 			})
 
-			it("should only load values that match they key", async ({
-				adapter,
-			}) => {
+			it("should only load values that match they key", async ({adapter}) => {
 				await adapter.save(["AAAAA", "sync-state", "xxxxx"], PAYLOAD_A())
 				await adapter.save(["BBBBB", "sync-state", "zzzzz"], PAYLOAD_C())
 
@@ -121,15 +118,11 @@ export function runStorageAdapterTests(setup: SetupFn, title?: string): void {
 		})
 
 		describe("save and save", () => {
-			it("should overwrite data saved with the same key", async ({
-				adapter,
-			}) => {
+			it("should overwrite data saved with the same key", async ({adapter}) => {
 				await adapter.save(["AAAAA", "sync-state", "xxxxx"], PAYLOAD_A())
 				await adapter.save(["AAAAA", "sync-state", "xxxxx"], PAYLOAD_B())
 
-				expect(
-					await adapter.loadRange(["AAAAA", "sync-state"])
-				).toStrictEqual([
+				expect(await adapter.loadRange(["AAAAA", "sync-state"])).toStrictEqual([
 					{key: ["AAAAA", "sync-state", "xxxxx"], data: PAYLOAD_B()},
 				])
 			})
