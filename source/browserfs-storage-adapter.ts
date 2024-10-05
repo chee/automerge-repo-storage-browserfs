@@ -36,7 +36,9 @@ export default class BrowserFileSystemStorageAdapter
 		const handle = await getFileHandle(await this.directory, path)
 		const file = await handle!.getFile()
 		if (file.size) {
-			return new Uint8Array(await file.arrayBuffer())
+			const bytes = new Uint8Array(await file.arrayBuffer())
+			this.cache.set(key, bytes)
+			return bytes
 		} else {
 			return undefined
 		}
@@ -52,6 +54,7 @@ export default class BrowserFileSystemStorageAdapter
 		await writable.write(data)
 		await writable.close()
 	}
+
 	async remove(storageKey: StorageKey): Promise<void> {
 		const path = getFilePath(storageKey)
 		const key = getCacheKeyFromFilePath(path)
@@ -64,7 +67,6 @@ export default class BrowserFileSystemStorageAdapter
 	async loadRange(storageKeyPrefix: StorageKey): Promise<Chunk[]> {
 		const path = getFilePath(storageKeyPrefix)
 		const cacheKeyPrefix = getCacheKeyFromFilePath(path)
-
 		const chunks: Chunk[] = []
 		const skip: string[] = []
 		for (const [key, data] of this.cache.entries()) {
@@ -75,14 +77,18 @@ export default class BrowserFileSystemStorageAdapter
 		}
 		const dir = await getDirectoryHandle(await this.directory, path)
 		const handles = await getFileHandlesRecursively(dir, path)
-		for (const {key, handle} of handles) {
-			const fileCacheKey = getCacheKeyFromFilePath(key)
-			if (skip.includes(fileCacheKey)) continue
-			chunks.push({
-				key: ungetFilePath(key),
-				data: new Uint8Array(await (await handle.getFile()).arrayBuffer()),
+		await Promise.all(
+			handles.map(async ({key, handle}) => {
+				const fileCacheKey = getCacheKeyFromFilePath(key)
+				if (skip.includes(fileCacheKey)) return
+				const bytes = new Uint8Array(
+					await (await handle.getFile()).arrayBuffer()
+				)
+				this.cache.set(fileCacheKey, bytes)
+				chunks.push({key: ungetFilePath(key), data: bytes})
 			})
-		}
+		)
+
 		return chunks
 	}
 	async removeRange(storageKeyPrefix: StorageKey): Promise<void> {
